@@ -64,9 +64,9 @@ def main():
     #with open('data.txt', 'a') as outfile:
     
     while True:    # While there is video frames to process...
-
+        pose = None
         frame = vs.read()
-                
+        per_frame_start = time.time()        
         if using_vid_file:
             exists, frame = (frame) #with vid file, frame is a tuple. First value is boolean second is array of pixels
             if not exists: 
@@ -87,11 +87,13 @@ def main():
 
             pose_input, upscale_bbox = detector_to_simple_pose(frame, class_IDs, scores, bounding_boxs,
                                                                output_shape=(128, 96), ctx=ctx)
+            # print("class_IDs, scores",class_IDs, scores)
+            # print("len(upscale_bbox)",len(upscale_bbox))
             if len(upscale_bbox) > 0:
                 predicted_heatmap = estimator(pose_input)
                 pred_coords, confidence = heatmap_to_coord(predicted_heatmap, upscale_bbox)
-                img, pose = cv_plot_keypoints(frame, pred_coords, confidence, class_IDs, None, scores,
-                                        box_thresh=0.5, keypoint_thresh=0.15)
+                img, pose = cv_plot_keypoints(frame, pred_coords, confidence, class_IDs, None, scores, box_thresh=0.5, keypoint_thresh=0.15)
+                                        
 
                 #The following lines were for saving vid info to a file
                 #pose = args['vid'].split('/')
@@ -110,6 +112,10 @@ def main():
         img = imutils.resize(img, height = 280, width = 500)    # blowup image for displaying
         
         if pose:
+            print("pose detected as:",pose)
+            per_frame_end=time.time()
+            if skip_frame:
+            	print("Time taken for estimation per frame",(per_frame_end-per_frame_start))
             cv2.putText(img, '{}'.format(pose), (20,20), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
         else:
             cv2.putText(img, 'No Pose Detected', (20,20), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 255), 2)
